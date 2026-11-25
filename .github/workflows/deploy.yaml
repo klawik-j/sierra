@@ -1,0 +1,114 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "infra/**"
+      - "!infra/bootstrap/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-master
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_STATE_KEY: sierra/terraform.tfstate
+
+jobs:
+  deploy:
+    name: Apply infrastructure and deploy release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out merged source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: gha-deploy-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.17.2
+          terraform_wrapper: false
+
+      - name: Initialize Terraform
+        working-directory: infra
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=${TF_STATE_KEY}" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Validate Terraform
+        working-directory: infra
+        run: terraform validate
+
+      - name: Create deployment plan
+        working-directory: infra
+        run: terraform plan -lock-timeout=5m -out=tfplan
+
+      - name: Apply deployment plan
+        working-directory: infra
+        run: terraform apply -lock-timeout=5m -auto-approve tfplan
+
+      - name: Build and deploy release
+        env:
+          # Repository variable; set to "false" once your farm exists to close public sign-up.
+          ALLOW_SIGNUP: ${{ vars.ALLOW_SIGNUP }}
+        run: scripts/deploy.sh
+
+      - name: Invalidate CloudFront cache
+        working-directory: infra
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "$(terraform output -raw distribution_id)" \
+            --paths '/*' \
+            --query 'Invalidation.Id' \
+            --output text
+
+      - name: Publish URL
+        working-directory: infra
+        run: |
+          {
+            echo "### Deployed"
+            echo
+            echo "- **url**: $(terraform output -raw url)"
+            echo "- **commit**: ${GITHUB_SHA::7}"
+          } >> "$GITHUB_STEP_SUMMARY"

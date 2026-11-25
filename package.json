@@ -21,7 +21,8 @@
     "build": "npm run build -w @sierra/web && npm run build -w @sierra/api",
     "start": "npm run start -w @sierra/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test -w @sierra/api"
+    "test": "npm run test -w @sierra/api",
+    "deploy": "scripts/deploy.sh"
   },
   "devDependencies": {
     "concurrently": "^10.0.7",

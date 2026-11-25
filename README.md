@@ -50,6 +50,62 @@ npm start               # one process: the API also serves the web app on :3002
 
 Migrations run on API startup. Set `NODE_ENV=production` (secure cookies) and `ALLOW_SIGNUP=false` if strangers should not be able to create farms.
 
+## Deployment (AWS)
+
+Same shape as Foxtrot: one small server behind CloudFront.
+
+```mermaid
+flowchart LR
+    browser([Browser]) -- HTTPS --> cf[CloudFront]
+    cf -- "HTTP :3001<br/>(CloudFront prefix list only)" --> ec2["EC2 t4g.nano<br/>Node.js + PostgreSQL"]
+    ec2 --> ebs[("EBS gp3 data volume<br/>daily snapshots (DLM)")]
+    ec2 --> s3[("S3 files bucket")]
+    deploy[scripts/deploy.sh] -- release.tgz --> rel[("S3 releases bucket")]
+    deploy -- SSM Run Command --> ec2
+```
+
+| Component | Choice |
+|---|---|
+| Region | `eu-central-1`, default VPC |
+| Compute | EC2 `t4g.nano` (arm64, AL2023), 1 GiB swap, Elastic IP; process clock in `Europe/Warsaw` (work-time rules follow it) |
+| Database | PostgreSQL on a separate encrypted gp3 volume (`prevent_destroy`), 7 daily DLM snapshots |
+| Files | private S3 bucket, versioned, noncurrent versions expire after 30 days |
+| Edge | CloudFront default certificate, `PriceClass_100`, `/assets/*` cached, everything else pass-through |
+| Access | no SSH; SSM Session Manager / Run Command; IMDSv2 required |
+| IaC | Terraform in `infra/` (+ `infra/bootstrap/` for CI roles), state in `s3://static-sites-terraform-state-<account>/sierra/` |
+
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+terraform -chdir=infra init \
+  -backend-config="bucket=static-sites-terraform-state-${ACCOUNT_ID}" \
+  -backend-config="key=sierra/terraform.tfstate" \
+  -backend-config="region=eu-central-1" \
+  -backend-config="encrypt=true" \
+  -backend-config="use_lockfile=true"
+terraform -chdir=infra apply           # infrastructure (first boot provisioning ~15 min)
+npm run deploy                         # build, upload, install via SSM
+# normally both run in CI on merge to master (see CI/CD)
+ALLOW_SIGNUP=false npm run deploy      # close public sign-up ("true" reopens it)
+SEED_PASSWORD=... npm run deploy       # additionally create the demo farm
+terraform -chdir=infra output url
+```
+
+**Sign-up.** A fresh deployment lets anyone with the address create a farm. Create yours at `/register`, then close sign-up: set the repository variable `ALLOW_SIGNUP` to `false` (applied on the next deploy) or run `ALLOW_SIGNUP=false npm run deploy`. People still join existing farms through invitation links.
+
+Shell on the instance: `aws ssm start-session --target $(terraform -chdir=infra output -raw instance_id)`.
+Logs: `journalctl -u sierra`. Settings: `/etc/sierra.env`.
+
+### CI/CD
+
+| Workflow | Trigger | Role |
+|---|---|---|
+| `.github/workflows/plan.yaml` | pull request: typecheck, test, build, `terraform plan` posted as a comment | `sierra-gha-plan`: `ReadOnlyAccess` + state |
+| `.github/workflows/deploy.yaml` | push to `master`, manual: typecheck, test, `terraform apply`, deploy, CloudFront invalidation | `sierra-gha-deploy`: scoped to `sierra-*` resources |
+
+No long-lived AWS keys; roles are created by [`infra/bootstrap`](infra/bootstrap/README.md). Repository variables: `AWS_DEPLOY_ROLE_ARN`, `AWS_PLAN_ROLE_ARN`, `AWS_REGION`, `TF_STATE_BUCKET`, `ALLOW_SIGNUP`.
+
+Running cost is the same as Foxtrot's: about $8.3 a month (EC2 `t4g.nano`, public IPv4, EBS, snapshots; CloudFront within the free tier), excluding VAT.
+
 ## Scripts
 
 | Script | Description |
@@ -61,6 +117,7 @@ Migrations run on API startup. Set `NODE_ENV=production` (secure cookies) and `A
 | `db:seed` / `db:reset` | create / recreate the demo farm |
 | `db:generate` | new migration after editing `apps/api/src/db/schema.ts` |
 | `infra:up` / `infra:down` | docker-compose Postgres + MinIO |
+| `deploy` | build and deploy to AWS (`scripts/deploy.sh`) |
 
 ## Stack
 
@@ -77,6 +134,10 @@ apps/api         Fastify REST API, migrations (apps/api/drizzle), seed, tests
 apps/web         React SPA / PWA
 packages/shared  enums, permissions, validation schemas, API types
 docs             requirements
+infra            Terraform (AWS), instance bootstrap, release installer
+infra/bootstrap  GitHub OIDC roles for CI (applied by hand)
+.github          plan (PR) and deploy (master) workflows
+scripts          deploy.sh
 ```
 
 ## How it is put together
