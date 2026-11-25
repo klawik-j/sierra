@@ -333,7 +333,7 @@ notifications(id, user_id, organization_id, type, payload, read_at)
 > | 6 | Manual time entries (hours, date, note). No timer, no payroll. |
 > | 9 | Online only. |
 > | 10 | In-app notifications only. |
-> | 11, 12 | Foxtrot-style TypeScript stack. Not deployed yet. |
+> | 11, 12 | Foxtrot-style TypeScript stack, deployed to the same AWS account with the same setup; no custom domain. |
 > | 14 | Live dictation only (as in Foxtrot). |
 > | 15 | Notes are private by default, with a "visible to the whole farm" switch. |
 > | 16 | Employees see the whole contact directory. |
@@ -370,6 +370,7 @@ notifications(id, user_id, organization_id, type, payload, read_at)
 - Contacts: directory with tap-to-call / SMS / e-mail / navigate / website, linked to machines, buildings and tickets. Team members' numbers are tap-to-call too.
 - Dashboard per role, global search (`Ctrl/⌘ K`), light and dark theme, Polish and English, installable PWA shell.
 - Phone layout (bottom bar, quick-add button, full-screen ticket) and desktop layout (sidebar, side drawer, board, inline filters).
+- Deployment on AWS like Foxtrot (EC2 + PostgreSQL behind CloudFront, S3 for files, daily database snapshots, Terraform, GitHub Actions plan and deploy).
 - Security: scrypt password hashes, HTTP-only session cookies, CSRF header check, rate-limited sign-in, upload type and size validation, tenant scoping on every query.
 
 **Not built yet** (from §4–§6)
@@ -379,6 +380,6 @@ notifications(id, user_id, organization_id, type, payload, read_at)
 - Sub-locations and child equipment in the UI (FR-B2, FR-B4) — the data model already supports nesting.
 - Guest / contractor role, trash with restore, custom ticket workflows.
 - Offline mode, push / e-mail notifications, recurring maintenance, cost tracking, voice memos (Phase 2).
-- Deployment to AWS, backups (NFR-8), PostgreSQL row-level security as a second line of defence (NFR-1).
+- PostgreSQL row-level security as a second line of defence (NFR-1); a custom domain.
 - Work time and leave extras: pay rates and pay calculation, overtime rules, monthly approval, leave approval and balances, half days, reminders (§4.10 and §4.11 "Later").
 - Self-service plans and billing (Phase 3).

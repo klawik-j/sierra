@@ -1,0 +1,122 @@
+#!/bin/bash
+# First-boot provisioning (Amazon Linux 2023, arm64). Rendered by Terraform.
+set -euxo pipefail
+export AWS_DEFAULT_REGION=${region}
+
+APP_USER=sierra
+APP_DIR=/opt/sierra
+DATA_DIR=/var/lib/sierra
+DATA_DEV=/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${data_volume_id}
+
+# 1 GiB swap: t4g.nano has 512 MiB RAM.
+if [ ! -f /swapfile ]; then
+  dd if=/dev/zero of=/swapfile bs=1M count=1024
+  chmod 600 /swapfile
+  mkswap /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+swapon -a || true
+
+# Data volume (database), formatted once.
+for i in $(seq 1 60); do [ -e "$DATA_DEV" ] && break; sleep 5; done
+if ! blkid "$DATA_DEV"; then mkfs.xfs "$DATA_DEV"; fi
+mkdir -p "$DATA_DIR"
+grep -q " $DATA_DIR " /etc/fstab || echo "$DATA_DEV $DATA_DIR xfs defaults,nofail 0 2" >> /etc/fstab
+mount -a
+
+# Node.js (official arm64 build, checksum verified).
+NODE_DIST=https://nodejs.org/dist/latest-v${node_major}.x
+curl -fsSL "$NODE_DIST/SHASUMS256.txt" -o /tmp/node-sums.txt
+NODE_FILE=$(awk '/linux-arm64.tar.xz$/ {print $2}' /tmp/node-sums.txt)
+curl -fsSL "$NODE_DIST/$NODE_FILE" -o "/tmp/$NODE_FILE"
+(cd /tmp && grep " $NODE_FILE\$" node-sums.txt | sha256sum -c -)
+mkdir -p /opt/node
+tar -xJf "/tmp/$NODE_FILE" -C /opt/node --strip-components=1
+ln -sf /opt/node/bin/node /usr/local/bin/node
+ln -sf /opt/node/bin/npm /usr/local/bin/npm
+
+id "$APP_USER" >/dev/null 2>&1 || useradd --system --home-dir "$APP_DIR" --shell /sbin/nologin "$APP_USER"
+mkdir -p "$APP_DIR/releases" "$APP_DIR/bin"
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+
+# PostgreSQL with its data directory on the data volume, tuned for 512 MiB RAM.
+PG_PKG=$(for v in 17 16 15; do dnf list --available "postgresql$v-server" >/dev/null 2>&1 && echo "postgresql$v-server" && break; done)
+dnf install -y "$PG_PKG"
+PGDATA="$DATA_DIR/pgsql"
+mkdir -p /etc/systemd/system/postgresql.service.d
+cat > /etc/systemd/system/postgresql.service.d/data.conf <<UNIT
+[Service]
+Environment=PGDATA=$PGDATA
+UNIT
+systemctl daemon-reload
+mkdir -p "$PGDATA" && chown postgres:postgres "$PGDATA" && chmod 700 "$PGDATA"
+if [ ! -f "$PGDATA/PG_VERSION" ]; then
+  postgresql-setup --initdb --unit postgresql
+  cat >> "$PGDATA/postgresql.conf" <<CONF
+listen_addresses = 'localhost'
+max_connections = 20
+shared_buffers = 32MB
+work_mem = 2MB
+maintenance_work_mem = 16MB
+effective_cache_size = 128MB
+CONF
+  sed -i -E 's/^(host\s+all\s+all\s+127\.0\.0\.1\/32\s+)\S+/\1scram-sha-256/; s/^(host\s+all\s+all\s+::1\/128\s+)\S+/\1scram-sha-256/' "$PGDATA/pg_hba.conf"
+fi
+systemctl enable --now postgresql
+DB_PASSWORD_FILE="$DATA_DIR/.db-password"
+if [ ! -f "$DB_PASSWORD_FILE" ]; then
+  openssl rand -hex 24 > "$DB_PASSWORD_FILE"
+  chmod 600 "$DB_PASSWORD_FILE"
+fi
+DB_PASSWORD=$(cat "$DB_PASSWORD_FILE")
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
+DO \$\$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sierra') THEN CREATE ROLE sierra LOGIN; END IF;
+END \$\$;
+ALTER ROLE sierra PASSWORD '$DB_PASSWORD';
+SQL
+sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'sierra'" | grep -q 1 || sudo -u postgres createdb -O sierra sierra
+
+cat > /etc/sierra.env <<ENV
+NODE_ENV=production
+PORT=${app_port}
+HOST=0.0.0.0
+DATABASE_URL=postgres://sierra:$DB_PASSWORD@localhost:5432/sierra
+DB_POOL_MAX=4
+STORAGE_DRIVER=s3
+S3_BUCKET=${files_bucket}
+S3_REGION=${region}
+AWS_REGION=${region}
+LOG_LEVEL=info
+TZ=${time_zone}
+ALLOW_SIGNUP=true
+ENV
+chmod 600 /etc/sierra.env
+
+cat > /etc/systemd/system/sierra.service <<UNIT
+[Unit]
+Description=Sierra
+After=network-online.target postgresql.service
+Requires=postgresql.service
+Wants=network-online.target
+
+[Service]
+User=$APP_USER
+EnvironmentFile=/etc/sierra.env
+WorkingDirectory=$APP_DIR/current
+ExecStart=/usr/local/bin/node --max-old-space-size=256 apps/api/dist/index.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable sierra
+
+# Instance replacement: install the current release if one exists.
+if aws s3api head-object --bucket "${releases_bucket}" --key releases/current.tgz >/dev/null 2>&1; then
+  aws s3 cp "s3://${releases_bucket}/releases/install-release.sh" "$APP_DIR/bin/install-release.sh" --only-show-errors
+  chmod 755 "$APP_DIR/bin/install-release.sh"
+  "$APP_DIR/bin/install-release.sh" "${releases_bucket}"
+fi
