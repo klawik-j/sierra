@@ -1,0 +1,35 @@
+{
+  "name": "sierra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "db:generate": "npm run db:generate -w @sierra/api",
+    "db:migrate": "npm run db:migrate -w @sierra/api",
+    "db:seed": "npm run db:seed -w @sierra/api",
+    "db:reset": "npm run db:seed -w @sierra/api -- --reset",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @sierra/api\" \"npm run dev -w @sierra/web\"",
+    "build": "npm run build -w @sierra/web && npm run build -w @sierra/api",
+    "start": "npm run start -w @sierra/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @sierra/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7",
+    "typescript": "~5.9.3"
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "work_days" ADD COLUMN "kind" text DEFAULT 'work' NOT NULL;

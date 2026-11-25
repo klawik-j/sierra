@@ -1,0 +1,216 @@
+@import "@fontsource-variable/figtree";
+@import "tailwindcss";
+
+/*
+ * Sierra design tokens — "field & barn": warm paper, forest green, wheat.
+ * Light is the default (readable outdoors); dark follows the system or the manual
+ * choice in Settings (html[data-theme]). Components use these semantic names only.
+ * Category colours are user data and stay inline.
+ */
+@theme static {
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --spacing-tap: 2.75rem; /* 44px minimum touch target */
+  --spacing-nav: 4rem; /* bottom tab bar height (without safe area) */
+  --spacing-sidebar: 15.5rem;
+  --container-content: 78rem;
+  --container-reading: 46rem;
+
+  --radius-tag: 0.375rem;
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+
+  --shadow-raise: 0 1px 2px rgb(28 36 32 / 0.06), 0 1px 1px rgb(28 36 32 / 0.04);
+  --shadow-pop: 0 12px 32px rgb(28 36 32 / 0.16), 0 2px 6px rgb(28 36 32 / 0.08);
+  --shadow-fab: 0 10px 24px rgb(47 107 63 / 0.35), 0 2px 6px rgb(28 36 32 / 0.2);
+
+  --color-bg: #f4f2ec;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1eee6;
+  --color-surface-3: #e6e2d7;
+  --color-line: #e0dbcf;
+  --color-line-strong: #8d8778;
+  --color-fg: #1c2420;
+  --color-muted: #5b655e;
+  --color-primary: #2f6b3f;
+  --color-primary-hover: #275a35;
+  --color-on-primary: #ffffff;
+  --color-primary-soft: #e2efe4;
+  --color-primary-ink: #24552f;
+  --color-accent: #e9b949;
+  --color-on-accent: #2b2206;
+  --color-ring: #2f6b3f;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fbe6e3;
+  --color-warn: #8f5200;
+  --color-warn-soft: #fcefd3;
+  --color-info: #1d5fa8;
+  --color-info-soft: #e1edfa;
+  --color-scrim: rgb(20 26 23 / 0.5);
+
+  --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-drawer-in: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  @keyframes sheet-in {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes drawer-in {
+    from {
+      transform: translateX(32px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg: #141a17;
+    --color-surface: #1c2420;
+    --color-surface-2: #242e29;
+    --color-surface-3: #2f3b35;
+    --color-line: #313d37;
+    --color-line-strong: #72807a;
+    --color-fg: #edf1ee;
+    --color-muted: #a2aea7;
+    --color-primary: #6dbd7d;
+    --color-primary-hover: #82cb91;
+    --color-on-primary: #0e1a12;
+    --color-primary-soft: #21382a;
+    --color-primary-ink: #93d6a0;
+    --color-ring: #93d6a0;
+    --color-danger: #ff8a80;
+    --color-danger-soft: #43201d;
+    --color-warn: #f2b25c;
+    --color-warn-soft: #3d2f17;
+    --color-info: #86bcf5;
+    --color-info-soft: #1c2f45;
+    --color-scrim: rgb(0 0 0 / 0.6);
+    --shadow-raise: 0 1px 0 rgb(0 0 0 / 0.3);
+    --shadow-pop: 0 12px 36px rgb(0 0 0 / 0.55);
+    --shadow-fab: 0 10px 24px rgb(0 0 0 / 0.5);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --color-bg: #141a17;
+      --color-surface: #1c2420;
+      --color-surface-2: #242e29;
+      --color-surface-3: #2f3b35;
+      --color-line: #313d37;
+      --color-line-strong: #72807a;
+      --color-fg: #edf1ee;
+      --color-muted: #a2aea7;
+      --color-primary: #6dbd7d;
+      --color-primary-hover: #82cb91;
+      --color-on-primary: #0e1a12;
+      --color-primary-soft: #21382a;
+      --color-primary-ink: #93d6a0;
+      --color-ring: #93d6a0;
+      --color-danger: #ff8a80;
+      --color-danger-soft: #43201d;
+      --color-warn: #f2b25c;
+      --color-warn-soft: #3d2f17;
+      --color-info: #86bcf5;
+      --color-info-soft: #1c2f45;
+      --color-scrim: rgb(0 0 0 / 0.6);
+      --shadow-raise: 0 1px 0 rgb(0 0 0 / 0.3);
+      --shadow-pop: 0 12px 36px rgb(0 0 0 / 0.55);
+      --shadow-fab: 0 10px 24px rgb(0 0 0 / 0.5);
+    }
+  }
+
+  :root {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+    scroll-padding-top: calc(4.5rem + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(var(--spacing-nav) + 1rem + env(safe-area-inset-bottom));
+  }
+
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    line-height: 1.5;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+
+  ::placeholder {
+    color: var(--color-muted);
+    opacity: 0.8;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  button,
+  [role="button"],
+  a,
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
