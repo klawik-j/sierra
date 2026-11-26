@@ -229,7 +229,7 @@ Responsive does not just mean "the same page squeezed". Each screen is designed 
 
 ### 5.3 Visual design
 
-- Clean, modern, calm look (shadcn/ui-style), consistent design system: spacing, typography, colours, icons.
+- Clean, modern, calm look (shadcn/ui-style), consistent design system: spacing, typography, colours, icons ([ICONS.md](ICONS.md)).
 - Light and dark mode.
 - Colour coding for status and priority, asset photos/avatars for quick recognition.
 - Empty states, skeleton loaders, and friendly confirmations instead of blank screens and spinners.

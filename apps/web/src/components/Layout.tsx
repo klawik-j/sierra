@@ -1,4 +1,4 @@
-import { Bell, Building2, ClipboardList, Clock, Contact, LayoutDashboard, Menu, Plus, Search, Settings, StickyNote, Tractor, Users, type LucideIcon } from "lucide-react";
+import { Bell, ClipboardList, Clock, Contact, LayoutDashboard, Menu, Plus, Search, Settings, StickyNote, Users, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useForms, useTicketDrawer } from "../features/forms";
@@ -7,6 +7,7 @@ import { TicketDrawer } from "../features/TicketDrawer";
 import { useT } from "../lib/i18n";
 import { useOrg } from "../lib/org";
 import { useNotifications } from "../lib/queries";
+import { BuildingsIcon, MachinesIcon } from "./assetIcons";
 import { Avatar, buttonClass, cx, iconButtonClass, optionClass } from "./ui";
 
 export function Brand({ className }: { className?: string }) {
@@ -69,8 +70,8 @@ export function Layout() {
     { to: "/", label: t("nav.dashboard"), icon: LayoutDashboard, active: at("/") },
     { to: "/tickets", label: t("nav.tickets"), icon: ClipboardList, active: at("/tickets") },
     { to: "/worktime", label: t("nav.worktime"), icon: Clock, active: at("/worktime") },
-    { to: "/machines", label: t("nav.machines"), icon: Tractor, active: at("/machines") },
-    { to: "/buildings", label: t("nav.buildings"), icon: Building2, active: at("/buildings") },
+    { to: "/machines", label: t("nav.machines"), icon: MachinesIcon, active: at("/machines") },
+    { to: "/buildings", label: t("nav.buildings"), icon: BuildingsIcon, active: at("/buildings") },
     { to: "/notes", label: t("nav.notes"), icon: StickyNote, active: at("/notes") },
     { to: "/contacts", label: t("nav.contacts"), icon: Contact, active: at("/contacts") },
     { to: "/team", label: t("nav.team"), icon: Users, active: at("/team") },
@@ -78,7 +79,7 @@ export function Layout() {
   const mobile = [
     main[0]!,
     main[1]!,
-    { to: "/machines", label: t("nav.assets"), icon: Tractor, active: at("/machines", "/buildings", "/assets") },
+    { to: "/machines", label: t("nav.assets"), icon: MachinesIcon, active: at("/machines", "/buildings", "/assets") },
     main.find((n) => n.to === "/notes")!,
     { to: "/more", label: t("nav.more"), icon: Menu, active: at("/more", "/worktime", "/contacts", "/team", "/settings", "/notifications") },
   ];

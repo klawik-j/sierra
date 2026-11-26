@@ -1,7 +1,8 @@
-import { Building2, ClipboardList, Gauge, Plus, Search, Tractor } from "lucide-react";
+import { ClipboardList, Gauge, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { assetStatuses, isOpenStatus, type AssetDto, type AssetKind, type AssetStatus } from "@sierra/shared";
+import { BuildingsIcon, MachinesIcon } from "../components/assetIcons";
 import { assetDeadlines, assetIcon, AssetStatusBadge } from "../components/domain";
 import { Badge, Button, Chip, EmptyState, Input, PageHeader, PageLoader, Segmented } from "../components/ui";
 import { useForms } from "../features/forms";
@@ -53,8 +54,8 @@ export function AssetsPage({ kind }: { kind: AssetKind }) {
           value={kind}
           onChange={(v) => navigate(v === "machine" ? "/machines" : "/buildings")}
           options={[
-            { value: "machine", label: <><Tractor size={17} aria-hidden />{t("nav.machines")}</> },
-            { value: "building", label: <><Building2 size={17} aria-hidden />{t("nav.buildings")}</> },
+            { value: "machine", label: <><MachinesIcon size={17} aria-hidden />{t("nav.machines")}</> },
+            { value: "building", label: <><BuildingsIcon size={17} aria-hidden />{t("nav.buildings")}</> },
           ]}
           className="flex lg:hidden"
         />
@@ -92,7 +93,7 @@ export function AssetsPage({ kind }: { kind: AssetKind }) {
         </ul>
       ) : (
         <EmptyState
-          icon={machine ? <Tractor size={24} aria-hidden /> : <Building2 size={24} aria-hidden />}
+          icon={machine ? <MachinesIcon size={24} aria-hidden /> : <BuildingsIcon size={24} aria-hidden />}
           title={all.length ? t("common.nothingFound") : t(machine ? "assets.emptyMachines" : "assets.emptyBuildings")}
           text={all.length ? undefined : t(machine ? "assets.emptyMachinesText" : "assets.emptyBuildingsText")}
           action={

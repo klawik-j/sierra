@@ -1,7 +1,8 @@
-import { Building2, ClipboardList, Clock, Contact, StickyNote, Tractor, TreePalm } from "lucide-react";
+import { ClipboardList, Clock, Contact, StickyNote, TreePalm } from "lucide-react";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useSearchParams, type LinkProps } from "react-router";
 import type { AssetDto, AssetKind, ContactDto, DayKind, NoteDto, TicketDetailDto } from "@sierra/shared";
+import { BuildingsIcon, MachinesIcon } from "../components/assetIcons";
 import { Modal } from "../components/ui";
 import { useT } from "../lib/i18n";
 import { useOrg } from "../lib/org";
@@ -49,8 +50,8 @@ function QuickAdd({ onClose, onPick }: { onClose: () => void; onPick: (r: FormRe
     { icon: Clock, label: t("quick.hours"), hint: t("quick.hoursHint"), request: { kind: "workday" } as FormRequest },
     { icon: TreePalm, label: t("quick.absence"), hint: t("quick.absenceHint"), request: { kind: "workday", dayKind: "vacation" } as FormRequest },
     { icon: StickyNote, label: t("quick.note"), hint: t("quick.noteHint"), request: { kind: "note" } as FormRequest },
-    can("assets.manage") && { icon: Tractor, label: t("quick.machine"), hint: t("quick.machineHint"), request: { kind: "asset", assetKind: "machine" } as FormRequest },
-    can("assets.manage") && { icon: Building2, label: t("quick.building"), hint: t("quick.buildingHint"), request: { kind: "asset", assetKind: "building" } as FormRequest },
+    can("assets.manage") && { icon: MachinesIcon, label: t("quick.machine"), hint: t("quick.machineHint"), request: { kind: "asset", assetKind: "machine" } as FormRequest },
+    can("assets.manage") && { icon: BuildingsIcon, label: t("quick.building"), hint: t("quick.buildingHint"), request: { kind: "asset", assetKind: "building" } as FormRequest },
     can("contacts.manage") && { icon: Contact, label: t("quick.contact"), hint: t("quick.contactHint"), request: { kind: "contact" } as FormRequest },
   ].filter((o) => !!o);
   return (
