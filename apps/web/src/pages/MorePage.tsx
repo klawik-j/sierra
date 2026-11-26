@@ -1,5 +1,6 @@
-import { Bell, Building2, ChevronRight, Clock, Contact, Settings, Users, type LucideIcon } from "lucide-react";
+import { Bell, ChevronRight, Clock, Contact, Settings, Users, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
+import { BuildingsIcon } from "../components/assetIcons";
 import { RoleBadge } from "../components/domain";
 import { Avatar, PageHeader } from "../components/ui";
 import { useT } from "../lib/i18n";
@@ -13,7 +14,7 @@ export function MorePage() {
   const unread = (useNotifications().data ?? []).filter((n) => !n.readAt).length;
   const items: { to: string; icon: LucideIcon; label: string; hint: string; badge?: number }[] = [
     { to: "/worktime", icon: Clock, label: t("nav.worktime"), hint: t("more.worktime") },
-    { to: "/buildings", icon: Building2, label: t("nav.buildings"), hint: t("more.buildings") },
+    { to: "/buildings", icon: BuildingsIcon, label: t("nav.buildings"), hint: t("more.buildings") },
     { to: "/contacts", icon: Contact, label: t("nav.contacts"), hint: t("more.contacts") },
     { to: "/team", icon: Users, label: t("nav.team"), hint: t("more.team") },
     { to: "/notifications", icon: Bell, label: t("nav.notifications"), hint: t("more.notifications"), badge: unread },

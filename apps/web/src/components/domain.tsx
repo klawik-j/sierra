@@ -1,47 +1,9 @@
-import {
-  AlertTriangle,
-  Ban,
-  Beef,
-  Bird,
-  Building2,
-  CalendarClock,
-  Car,
-  ChevronDown,
-  ChevronsUp,
-  Circle,
-  CircleCheck,
-  CircleDot,
-  CirclePause,
-  Cog,
-  Container,
-  Crown,
-  Cylinder,
-  Droplets,
-  Equal,
-  Forklift,
-  HardHat,
-  House,
-  Leaf,
-  Package,
-  PiggyBank,
-  Scissors,
-  Shield,
-  Shovel,
-  Sprout,
-  Thermometer,
-  TreePalm,
-  Tractor,
-  Truck,
-  Warehouse,
-  Wheat,
-  Wrench,
-  ChevronUp,
-  type LucideIcon,
-} from "lucide-react";
+import { AlertTriangle, Ban, CalendarClock, ChevronDown, ChevronsUp, ChevronUp, Circle, CircleCheck, CircleDot, CirclePause, Crown, Equal, HardHat, Shield, Thermometer, TreePalm, type LucideIcon } from "lucide-react";
 import { isOpenStatus, type AbsenceKind, type ActivityDto, type AssetDto, type AssetStatus, type MemberDto, type Priority, type Role, type TicketStatus } from "@sierra/shared";
 import { dueState, useFmt } from "../lib/format";
 import { label, useT, type TFn } from "../lib/i18n";
 import { useOrg } from "../lib/org";
+import { buildingIcons, machineIcons } from "./assetIcons";
 import { Avatar, Badge, cx } from "./ui";
 
 // ---- Tickets ---------------------------------------------------------------
@@ -138,31 +100,8 @@ export function CategoryTag({ categoryId }: { categoryId: string | null }) {
 
 // ---- Assets ----------------------------------------------------------------
 
-const assetIcons: Record<string, LucideIcon> = {
-  tractor: Tractor,
-  combine: Wheat,
-  car: Car,
-  truck: Truck,
-  trailer: Container,
-  sprayer: Droplets,
-  seeder: Sprout,
-  plough: Shovel,
-  loader: Forklift,
-  baler: Package,
-  mower: Scissors,
-  barn: Warehouse,
-  cowshed: Beef,
-  pigsty: PiggyBank,
-  henhouse: Bird,
-  warehouse: Warehouse,
-  garage: Car,
-  workshop: Wrench,
-  silo: Cylinder,
-  house: House,
-  greenhouse: Leaf,
-};
-
-export const assetIcon = (asset: Pick<AssetDto, "kind" | "type">): LucideIcon => assetIcons[asset.type] ?? (asset.kind === "machine" ? Cog : Building2);
+export const assetIcon = (asset: Pick<AssetDto, "kind" | "type">): LucideIcon =>
+  asset.kind === "machine" ? (machineIcons[asset.type as keyof typeof machineIcons] ?? machineIcons.other) : (buildingIcons[asset.type as keyof typeof buildingIcons] ?? buildingIcons.other);
 
 const assetStatusTone: Record<AssetStatus, "primary" | "warn" | "danger" | "muted"> = {
   operational: "primary",
